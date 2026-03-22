@@ -614,16 +614,31 @@
     const payment_status   = document.getElementById("payment_status").value;
     const proofFile        = document.getElementById("payment_proof").files[0];
 
-    // Convert file to base64 jika ada
+   
+    // Kompres + convert gambar sebelum kirim
     let payment_proof = "";
     if (proofFile) {
-      payment_proof = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(proofFile);
-      });
+     payment_proof = await new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(proofFile);
+      img.onload = () => {
+       const canvas = document.createElement("canvas");
+       // Maksimal 800px lebar, pertahankan rasio
+       const maxW = 800;
+       const ratio = Math.min(maxW / img.width, 1);
+       canvas.width  = img.width  * ratio;
+       canvas.height = img.height * ratio;
+       const ctx = canvas.getContext("2d");
+       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+       // Kompres ke JPEG quality 60%
+       resolve(canvas.toDataURL("image/jpeg", 0.6));
+       URL.revokeObjectURL(url);
+      };
+      img.src = url;
+     });
     }
 
+   
     const payload = {
       body: {
         customer_name,
